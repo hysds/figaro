@@ -31,7 +31,7 @@ def query(index=None):
 
     # convert dates to PST
     for hit in result['hits']['hits']:
-        hit['fields'] = hit['_source']
+        hit['fields'] = hit['fields']['_source'][0]
         hit['fields']['_id'] = hit['_id']
         hit['fields']['_type'] = hit['_type']
         if "type" in hit['fields'] and hit['fields']['type'] == "job": 

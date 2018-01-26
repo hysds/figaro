@@ -196,7 +196,21 @@
         pager_on_top: true,
         search_sortby: [{ 'display': 'priority', 'field': 'job.priority' }, { 'display': 'timestamp', 'field': '@timestamp' }],
         sort: [{ '@timestamp': { "order": "desc"} }],
-        fields: [ '@timestamp', '_source' ],
+        fields: [ '@timestamp' ],
+        partial_fields: {
+            "_source": { 
+                "exclude": [
+                    "job.job_info.metrics",
+                    "context.context",
+                    "context.localize_urls",
+                    "job.context.context",
+                    "job.context.job_specification.params",
+                    "job.context.localize_urls",
+                    "job.localize_urls",
+                    "job.params"
+                ]
+            }
+        },
         json_fields: [ 'user_tags' ],
         filterchoice_result_fields: {
             'uuid': 'uuid',
