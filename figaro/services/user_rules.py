@@ -68,11 +68,17 @@ def get_actions_config():
     else:
         raise RuntimeError("Invalid interface: %s" % ifc)
     # enable actions that need special auth
+    try:
+        action_specs = sorted(hysds_commons.action_utils.get_action_spec(app.config["ES_URL"],
+                                                                         app.config["ES_URL"],
+                                                                         app.config["OPS_USER"]),
+                              key=lambda s: s['label'].lower())
+    except requests.exceptions.HTTPError, e:
+        if e.response.status_code == 404:
+            action_specs = []
+        else: raise
     actions = []
-    for action in sorted(hysds_commons.action_utils.get_action_spec(app.config["ES_URL"],
-                                                                    app.config["ES_URL"],
-                                                                    app.config["OPS_USER"]),
-                         key=lambda s: s['label'].lower()):
+    for action in action_specs:
         if not action[ifc_filter]: continue
         if action['public'] is False:
             if g.user.id in action.get('allowed_accounts', []):
@@ -90,15 +96,25 @@ def get_job_queues():
 @mod.route('/user_rules/get_jobspec_names', methods=['GET'])
 def get_jobspecs():
     """Get the list of jobspecs"""
-    jspecs = hysds_commons.job_spec_utils.get_job_spec_types(app.config["ES_URL"],
-                                                                logger=app.logger)
+    try:
+        jspecs = hysds_commons.job_spec_utils.get_job_spec_types(app.config["ES_URL"],
+                                                                 logger=app.logger)
+    except requests.exceptions.HTTPError, e:
+        if e.response.status_code == 404:
+            jspecs = []
+        else: raise
     return jsonify({"jobspecs": jspecs})
 
 @mod.route('/user_rules/get_container_names', methods=['GET'])
 def get_containers():
     """Get the list of containers"""
-    cspecs = hysds_commons.container_utils.get_container_types(app.config["ES_URL"],
-                                                               logger=app.logger)
+    try:
+        cspecs = hysds_commons.container_utils.get_container_types(app.config["ES_URL"],
+                                                                   logger=app.logger)
+    except requests.exceptions.HTTPError, e:
+        if e.response.status_code == 404:
+            cspecs = []
+        else: raise
     return jsonify({"containers": cspecs})
 
 @mod.route('/user_rules/add', methods=['POST'])
@@ -166,11 +182,17 @@ def add_user_rule():
         }), 500
 
     # get job type
+    try:
+        action_specs = sorted(hysds_commons.action_utils.get_action_spec(app.config["ES_URL"],
+                                                                         app.config["ES_URL"],
+                                                                         app.config["OPS_USER"]),
+                              key=lambda s: s['label'].lower())
+    except requests.exceptions.HTTPError, e:
+        if e.response.status_code == 404:
+            action_specs = []
+        else: raise
     job_type = None
-    for action in sorted(hysds_commons.action_utils.get_action_spec(app.config["ES_URL"],
-                                                                    app.config["ES_URL"],
-                                                                    app.config["OPS_USER"]),
-                         key=lambda s: s['label'].lower()):
+    for action in action_specs:
         if action['type'] == workflow:
             job_type = action['job_type']
     if job_type is None: 
