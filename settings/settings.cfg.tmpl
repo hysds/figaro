@@ -35,9 +35,9 @@ PUCCINI_USER = "{{ OPS_USER }}"
 
 MOZART_URL = "https://{{ MOZART_FQDN }}/mozart"
 # Kibana URL
-KIBANA_JOB_METRICS_URL = "http://{{ METRICS_FQDN }}:5601/app/kibana#/dashboard/cb40a460-5ad3-11e7-8e6a-cbf606444333"
+KIBANA_JOB_METRICS_URL = "https://{{ METRICS_FQDN }}/metrics/app/kibana#/dashboard/cb40a460-5ad3-11e7-8e6a-cbf606444333"
 KIBANA_PROV_METRICS_URL = "http://{{ METRICS_FQDN }}/metrics/#/dashboard/elasticsearch/Provenance%20Metrics"
-KIBANA_INSTANCE_STATS_URL = "http://{{ METRICS_FQDN }}:5601/app/kibana#/dashboard/5e0abbd0-5abd-11e7-a451-0fe7e85b0f7a"
+KIBANA_INSTANCE_STATS_URL = "https://{{ METRICS_FQDN }}/metrics/app/kibana#/dashboard/5e0abbd0-5abd-11e7-a451-0fe7e85b0f7a"
 
 # Flower URL
 FLOWER_URL = "http://{{ MOZART_FQDN }}:5555"
