@@ -91,7 +91,7 @@ def get_actions_config():
 def get_job_queues():
     ''' '''
     job_type = request.args.get("job_type")
-    queues = hysds_commons.mozart_utils.get_queue_list(app.config["MOZART_URL"],job_type)
+    queues = hysds_commons.mozart_utils.get_queue_list(app.config["MOZART_REST_API"],job_type)
     return jsonify(queues)
 @mod.route('/user_rules/get_jobspec_names', methods=['GET'])
 def get_jobspecs():
