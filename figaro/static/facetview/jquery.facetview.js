@@ -1358,7 +1358,7 @@ search box - the end user will not know they are happening.
                 delete qs.facets;
                 options.querystring = JSON.stringify(qs)
             }
-            options.sharesave_link ? $('.facetview_sharesaveurl', obj).val(window.location.protocol + '//' + window.location.host + window.location.pathname + '?source=' + options.querystring) : "";
+            options.sharesave_link ? $('.facetview_sharesaveurl', obj).val(window.location.protocol + '//' + window.location.host + window.location.pathname + '?base64=' + btoa(options.querystring)) : "";
             return qy;
         };
 
