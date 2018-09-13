@@ -440,19 +440,24 @@
             },
             {
               "pre": "<script>$(function() {\n" +
-                     '  var uuid = "',
-              "field": "event.uuid",
-              "post": '";\n'
-            },
-            {
-              "pre": '  var type = "',
+                     '  var type = "',
               "field": "event.type",
               "post": '";\n' +
-                      'console.log("uuid:" + uuid);\n' +
-                      'console.log("type:" + type);\n' +
+                      "  var uuid = null;\n"
+            },
+            {
+              "pre": '  uuid = "',
+              "field": "event.uuid",
+              "post": '";\n' +
                       'if (type == "task-failed") {\n' +
                       '  $("#task_exception_" + uuid).readmore({maxHeight: 75});\n' +
-                      '} else $("#task_exception_" + uuid).remove();\n' +
+                      '} else $("#task_exception_" + uuid).remove();\n'
+            },
+            {
+              "pre": 'if (uuid === null) $("script").prev("br").remove();\n' +
+                     'var __unused = "',
+              "field": "event.type",
+              "post": '";\n' +
                       "});<\/script>"
             }
           ],
