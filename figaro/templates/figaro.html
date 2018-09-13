@@ -427,6 +427,35 @@
               "post": "</pre>"
             }
           ],
+          [ 
+            {
+              "pre": '<div id="task_exception_',
+              "field": "event.uuid",
+              "post": '">exception: <pre>'
+            },
+            {
+              "pre": '',
+              "field": "event.exception",
+              "post": '</pre></div>'
+            },
+            {
+              "pre": "<script>$(function() {\n" +
+                     '  var uuid = "',
+              "field": "event.uuid",
+              "post": '";\n'
+            },
+            {
+              "pre": '  var type = "',
+              "field": "event.type",
+              "post": '";\n' +
+                      'console.log("uuid:" + uuid);\n' +
+                      'console.log("type:" + type);\n' +
+                      'if (type == "task-failed") {\n' +
+                      '  $("#task_exception_" + uuid).readmore({maxHeight: 75});\n' +
+                      '} else $("#task_exception_" + uuid).remove();\n' +
+                      "});<\/script>"
+            }
+          ],
           [
             {
               "pre": "freq: <font color='blue'>",
