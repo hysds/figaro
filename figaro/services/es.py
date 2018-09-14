@@ -9,6 +9,9 @@ from figaro import app
 mod = Blueprint('services/es', __name__)
 
 
+TASK_ERROR_RE = re.compile(r'^WorkerExecutionError\(\'(.*?)\'.*')
+
+
 @mod.route('/query/<index>', methods=['GET'])
 def query(index=None):
     """Query interface for FacetView."""
@@ -29,16 +32,23 @@ def query(index=None):
     result = r.json()
     #app.logger.debug("result: %s" % pformat(r.json()))
 
-    # convert dates to PST
+    # perform some housekeeping
     for hit in result['hits']['hits']:
         hit['fields'] = hit['fields']['_source'][0]
         hit['fields']['_id'] = hit['_id']
         hit['fields']['_type'] = hit['_type']
+        # convert dates to PST
         if "type" in hit['fields'] and hit['fields']['type'] == "job": 
             job_info = hit['fields'].get('job', {}).get('job_info', {})
             job_info['time_queued'] = parse(job_info['time_queued']).isoformat(' ').split('.')[0] if 'time_queued' in job_info else ''
             job_info['time_start'] = parse(job_info['time_start']).isoformat(' ').split('.')[0] if 'time_start' in job_info else ''
             job_info['time_end'] = parse(job_info['time_end']).isoformat(' ').split('.')[0] if 'time_end' in job_info else ''
+        # shorten task errors
+        if hit['_type'] == "task" and hit['fields']['status'] == "task-failed":
+            event_info = hit['fields'].get('event', {})
+            exc = event_info.get('exception', 'You should not see this Unspecified error.')
+            match = TASK_ERROR_RE.search(exc)
+            event_info['exception'] = match.group(1) if match else exc[0:200]
         hit['fields']['@timestamp'] = parse(hit['fields']['@timestamp']).isoformat(' ').split('.')[0] if '@timestamp' in hit['fields'] else ''
         
 
