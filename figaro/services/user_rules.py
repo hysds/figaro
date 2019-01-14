@@ -533,7 +533,7 @@ def process_this():
         'function': 'hysds_commons.job_iterator.iterate',
         'args': [ "figaro", rule ],
     }
-    do_submit_task(payload, celery_app.conf['USER_RULES_JOB_QUEUE'])
+    do_submit_task(payload, celery_app.conf['ON_DEMAND_JOB_QUEUE'])
 
     #SKIP User Run History -- Historical reason
 
