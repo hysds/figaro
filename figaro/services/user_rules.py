@@ -4,7 +4,7 @@ make_response, g, url_for, redirect)
 from flask_login import login_required
 from pprint import pformat
 from string import Template
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from hysds.celery import app as celery_app
 from hysds.task_worker import do_submit_task
@@ -73,7 +73,7 @@ def get_actions_config():
                                                                          app.config["ES_URL"],
                                                                          app.config["OPS_USER"]),
                               key=lambda s: s['label'].lower())
-    except requests.exceptions.HTTPError, e:
+    except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             action_specs = []
         else: raise
@@ -99,7 +99,7 @@ def get_jobspecs():
     try:
         jspecs = hysds_commons.job_spec_utils.get_job_spec_types(app.config["ES_URL"],
                                                                  logger=app.logger)
-    except requests.exceptions.HTTPError, e:
+    except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             jspecs = []
         else: raise
@@ -111,7 +111,7 @@ def get_containers():
     try:
         cspecs = hysds_commons.container_utils.get_container_types(app.config["ES_URL"],
                                                                    logger=app.logger)
-    except requests.exceptions.HTTPError, e:
+    except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             cspecs = []
         else: raise
@@ -187,7 +187,7 @@ def add_user_rule():
                                                                          app.config["ES_URL"],
                                                                          app.config["OPS_USER"]),
                               key=lambda s: s['label'].lower())
-    except requests.exceptions.HTTPError, e:
+    except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             action_specs = []
         else: raise
