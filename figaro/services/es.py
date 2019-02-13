@@ -64,7 +64,7 @@ def query(index=None):
             match = TASK_ERROR_RE.search(exc)
             event_info['exception'] = match.group(1) if match else exc[0:200]
         hit['fields']['@timestamp'] = parse(hit['fields']['@timestamp']).isoformat(
-            ' ').split('.')[0] if '@timestamp' in hit['fields'] else ''
+            str(' ')).split('.')[0] if '@timestamp' in hit['fields'] else ''
 
     # return JSONP
     return Response('%s(%s)' % (callback, json.dumps(result)),
