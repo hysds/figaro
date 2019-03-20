@@ -1,3 +1,9 @@
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -43,6 +49,7 @@ class ReverseProxied(object):
 
     :param app: the WSGI application
     '''
+
     def __init__(self, app):
         self.app = app
 
@@ -69,7 +76,8 @@ app.config.from_pyfile('../settings.cfg')
 
 # set database config
 dbdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(dbdir, 'app.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
+    os.path.join(dbdir, 'app.db')
 db = SQLAlchemy(app)
 
 # set user auth config
@@ -84,15 +92,21 @@ app.register_blueprint(viewsModule)
 # services blueprints
 from figaro.services.main import mod as mainModule
 app.register_blueprint(mainModule)
+
 from figaro.services.jobs import mod as jobsModule
 app.register_blueprint(jobsModule)
+
 from figaro.services.admin import mod as adminModule
 app.register_blueprint(adminModule)
+
 from figaro.services.es import mod as esModule
 app.register_blueprint(esModule)
+
 from figaro.services.stats import mod as statsModule
 app.register_blueprint(statsModule)
+
 from figaro.services.user_rules import mod as userRulesModule
 app.register_blueprint(userRulesModule)
+
 from figaro.services.user_tags import mod as userTagsModule
 app.register_blueprint(userTagsModule)
