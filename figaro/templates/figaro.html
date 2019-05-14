@@ -517,6 +517,14 @@
               "post": "</pre>"
             }
           ],
+          // retry count Display
+          [
+            {
+              "pre":"retry count: ",
+              "field":"job.retry_count",
+              "post":""
+            }
+          ],
           [ 
             {
               "pre": '<a target="_blank" href="{{ config['FLOWER_URL'] }}/task/',
@@ -604,14 +612,6 @@
             {
               "pre":"container: ",
               "field":"container",
-              "post":""
-            }
-          ],
-          // retry count Display
-          [
-            {
-              "pre":"retry Count: ",
-              "field":"job.retry_count",
               "post":""
             }
           ]
