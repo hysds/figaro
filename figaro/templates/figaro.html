@@ -177,6 +177,7 @@
             {'field':'job.job.priority', 'display': 'priority'},
             {'field':'job.job.container_image_name', 'display': 'container'},
             {'field':'job.delivery_info.redelivered', 'display': 'redelivered'}, 
+            {'field':'job.retry_count', 'display': 'retry count'},
             {'field':'uuid', 'display': 'uuid'},
             {'field':'payload_id', 'display': 'payload ID'},
             {'field':'job.job_info.facts.virtual', 'display': 'virtual'},
@@ -612,14 +613,6 @@
             {
               "pre":"container: ",
               "field":"container",
-              "post":""
-            }
-          ],
-          // retry count Display
-          [
-            {
-              "pre":"retry Count: ",
-              "field":"job.retry_count",
               "post":""
             }
           ]
