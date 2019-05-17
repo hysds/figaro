@@ -172,11 +172,12 @@
             {'field':'resource', 'display': 'resource'},
             {'field':'tags.untouched', 'display': 'tag'},
             {'field':'job.job.username', 'display': 'username'},
-            {'field':'status', 'display': 'status'}, 
+            {'field':'status', 'display': 'status'},
             {'field':'type', 'display': 'type'},
             {'field':'job.job.priority', 'display': 'priority'},
             {'field':'job.job.container_image_name', 'display': 'container'},
-            {'field':'job.delivery_info.redelivered', 'display': 'redelivered'}, 
+            {'field':'job.delivery_info.redelivered', 'display': 'redelivered'},
+            {'field':'job.job_info.status', 'display': 'exit code'}
             {'field':'job.retry_count', 'display': 'retry count'},
             {'field':'uuid', 'display': 'uuid'},
             {'field':'payload_id', 'display': 'payload ID'},
@@ -187,8 +188,7 @@
             {'field':'job.job_info.facts.processorcount', 'display': 'processors'},
             {'field':'job.job_info.facts.memorytotal', 'display': 'total memory'},
             {'field':'job.job_info.facts.swapsize', 'display': 'swap size'},
-            {'field':'job.job_info.execute_node', 'display': 'worker'},
-            {'field':'job.job_info.status', 'display': 'exit code'}
+            {'field':'job.job_info.execute_node', 'display': 'worker'}
         ],
         paging: {
           from: 0,
@@ -428,6 +428,14 @@
               "post": "</pre>"
             }
           ],
+          // retry count Display
+          [
+            {
+              "pre":"retry count: ",
+              "field":"job.retry_count",
+              "post":""
+            }
+          ],
           [ 
             {
               "pre": '<div id="task_exception_',
@@ -516,14 +524,6 @@
               "pre": "args: <pre>",
               "field": "event.args",
               "post": "</pre>"
-            }
-          ],
-          // retry count Display
-          [
-            {
-              "pre":"retry count: ",
-              "field":"job.retry_count",
-              "post":""
             }
           ],
           [ 
