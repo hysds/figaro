@@ -31,7 +31,6 @@ setup(
         'elasticsearch>=7.0.0,<8.0.0',
         'pytz',
         'numpy',
-        'flask-restplus>=0.9.2',
         'future>=0.17.1'
     ]
 )
