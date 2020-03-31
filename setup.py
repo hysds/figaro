@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='figaro',
-    version='2.1.3',
+    version='2.1.4',
     long_description='HySDS web ui interface',
     packages=find_packages(),
     include_package_data=True,
