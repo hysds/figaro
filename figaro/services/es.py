@@ -30,46 +30,81 @@ def query(index=None):
     # get callback, source, and index
     callback = request.args.get('callback')
     source = request.args.get('source')
+
+    def respond(payload, status=200):
+        """Return JSONP when a callback was requested, otherwise plain JSON.
+        JSONP responses must be HTTP 200 so the browser executes the script and
+        the caller sees the error payload."""
+
+        if callback:
+            return Response('%s(%s)' % (callback, json.dumps(payload)),
+                            mimetype="application/javascript")
+        return jsonify(payload), status
+
     if index is None:
-        return jsonify({
+        return respond({
             'success': False,
             'message': "Cannot recognize index: %s" % index,
-        }), 500
+        }, 500)
 
     # query
     es_url = app.config['ES_URL']
     #app.logger.debug("ES query for query(): %s" % source)
-    r = requests.post('%s/%s/_search' % (es_url, index), data=source)
-    result = r.json()
+    try:
+        r = requests.post('%s/%s/_search' % (es_url, index), data=source)
+    except Exception as e:
+        app.logger.exception("Failed to query ES for FacetView.")
+        return respond({
+            'success': False,
+            'message': "Failed to query Elasticsearch: %s" % str(e),
+        }, 502)
+    try:
+        result = r.json()
+    except ValueError:
+        result = {'error': r.text[:500]}
     #app.logger.debug("result: %s" % pformat(r.json()))
 
-    # perform some housekeeping
-    for hit in result['hits']['hits']:
-        hit['fields'] = hit['fields']['_source'][0]
-        hit['fields']['_id'] = hit['_id']
-        hit['fields']['_type'] = hit['_type']
-        # convert dates to PST
-        if "type" in hit['fields'] and hit['fields']['type'] == "job":
-            job_info = hit['fields'].get('job', {}).get('job_info', {})
-            job_info['time_queued'] = parse(job_info['time_queued']).isoformat(
-                str(' ')).split('.')[0] if 'time_queued' in job_info else ''
-            job_info['time_start'] = parse(job_info['time_start']).isoformat(
-                str(' ')).split('.')[0] if 'time_start' in job_info else ''
-            job_info['time_end'] = parse(job_info['time_end']).isoformat(
-                str(' ')).split('.')[0] if 'time_end' in job_info else ''
-        # shorten task errors
-        if hit['_type'] == "task" and hit['fields']['status'] == "task-failed":
-            event_info = hit['fields'].get('event', {})
-            exc = event_info.get(
-                'exception', 'You should not see this Unspecified error.')
-            match = TASK_ERROR_RE.search(exc)
-            event_info['exception'] = match.group(1) if match else exc[0:200]
-        hit['fields']['@timestamp'] = parse(hit['fields']['@timestamp']).isoformat(
-            str(' ')).split('.')[0] if '@timestamp' in hit['fields'] else ''
+    # an error body has no hits to display; say so instead of returning a page
+    # of HTML that the browser cannot use
+    if r.status_code != 200 or 'hits' not in result:
+        app.logger.error("Failed to query ES. Got status code %d:\n%s" %
+                         (r.status_code, json.dumps(result)[:1000]))
+        return respond({
+            'success': False,
+            'message': "Elasticsearch query failed (HTTP %d): %s" % (
+                r.status_code, json.dumps(result)[:500]),
+        }, 502)
 
-    # return JSONP
-    return Response('%s(%s)' % (callback, json.dumps(result)),
-                    mimetype="application/javascript")
+    # perform some housekeeping; one malformed document must not take down the
+    # whole page of results
+    for hit in result['hits']['hits']:
+        try:
+            hit['fields'] = hit['fields']['_source'][0]
+            hit['fields']['_id'] = hit['_id']
+            hit['fields']['_type'] = hit['_type']
+            # convert dates to PST
+            if "type" in hit['fields'] and hit['fields']['type'] == "job":
+                job_info = hit['fields'].get('job', {}).get('job_info', {})
+                job_info['time_queued'] = parse(job_info['time_queued']).isoformat(
+                    str(' ')).split('.')[0] if 'time_queued' in job_info else ''
+                job_info['time_start'] = parse(job_info['time_start']).isoformat(
+                    str(' ')).split('.')[0] if 'time_start' in job_info else ''
+                job_info['time_end'] = parse(job_info['time_end']).isoformat(
+                    str(' ')).split('.')[0] if 'time_end' in job_info else ''
+            # shorten task errors
+            if hit['_type'] == "task" and hit['fields']['status'] == "task-failed":
+                event_info = hit['fields'].get('event', {})
+                exc = event_info.get(
+                    'exception', 'You should not see this Unspecified error.')
+                match = TASK_ERROR_RE.search(exc)
+                event_info['exception'] = match.group(1) if match else exc[0:200]
+            hit['fields']['@timestamp'] = parse(hit['fields']['@timestamp']).isoformat(
+                str(' ')).split('.')[0] if '@timestamp' in hit['fields'] else ''
+        except Exception:
+            app.logger.exception("Skipping housekeeping for hit %s." %
+                                 hit.get('_id', '(unknown id)'))
+
+    return respond(result)
 
 
 @mod.route('/job_info', methods=['GET'])
