@@ -51,6 +51,21 @@ var ajax_request = null;
     };
 })(jQuery);
 
+// base64 helpers that survive non-Latin-1 characters; plain btoa() throws an
+// InvalidCharacterError on them, which would kill the search that built the link
+function b64EncodeUnicode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+}
+
+function b64DecodeUnicode(str) {
+    // links generated before the UTF-8 fix were encoded with plain btoa()
+    try {
+        return decodeURIComponent(escape(atob(str)));
+    } catch (e) {
+        return atob(str);
+    }
+}
+
 // add extension to jQuery with a function to get URL parameters
 jQuery.extend({
     getUrlVars: function() {
@@ -493,7 +508,7 @@ search box - the end user will not know they are happening.
 
         // handle base64 encoded query
         if (url_options.base64)
-          url_options.source = JSON.parse(atob(url_options.base64));
+          url_options.source = JSON.parse(b64DecodeUnicode(url_options.base64));
         //console.log(url_options);
 
         $.fn.facetview.options = $.extend(provided_options,url_options);
@@ -501,9 +516,28 @@ search box - the end user will not know they are happening.
 
 
         // ===============================================
+        // helpers for embedding facet values in markup and selectors
+        // ===============================================
+
+        // escape a value that gets interpolated into generated HTML; facet values
+        // are index data and routinely contain quotes and angle brackets (job error
+        // messages, for example), which would otherwise truncate the attribute
+        var escHtmlAttr = function(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        };
+
+        // escape a value that gets interpolated into a jQuery attribute selector;
+        // an unescaped quote makes Sizzle throw "unrecognized expression" and kills
+        // the click handler it was called from
+        var escSelectorVal = function(s) {
+            return String(s).replace(/(["\\])/g, '\\$1');
+        };
+
+        // ===============================================
         // functions to do with filters
         // ===============================================
-        
+
         // show the filter values
         var showfiltervals = function(event) {
             event.preventDefault();
@@ -528,11 +562,11 @@ search box - the end user will not know they are happening.
             if ( $(this).attr('rel') == 'AND' ) {
                 $(this).attr('rel','OR');
                 $(this).css({'color':'#333'});
-                $('.facetview_filterselected[rel="' + $(this).attr('href') + '"]', obj).addClass('facetview_logic_or');
+                $('.facetview_filterselected[rel="' + escSelectorVal($(this).attr('href')) + '"]', obj).addClass('facetview_logic_or');
             } else {
                 $(this).attr('rel','AND');
                 $(this).css({'color':'#aaa'});
-                $('.facetview_filterselected[rel="' + $(this).attr('href') + '"]', obj).removeClass('facetview_logic_or');
+                $('.facetview_filterselected[rel="' + escSelectorVal($(this).attr('href')) + '"]', obj).removeClass('facetview_logic_or');
             }
             dosearch();
         }
@@ -778,12 +812,12 @@ search box - the end user will not know they are happening.
             }
             var relclean = rel.replace(/\./gi,'_').replace(/\:/gi,'_');
             // Do nothing if element already exists.
-            if( $('a.facetview_filterselected[href="'+href+'"][rel="'+rel+'"]').length ){
+            if( $('a.facetview_filterselected[href="'+escSelectorVal(href)+'"][rel="'+escSelectorVal(rel)+'"]').length ){
                 return null;
             }
 
             var newobj = '<a class="facetview_filterselected facetview_clear btn btn-info';
-            if ( $('.facetview_or[href="' + rel + '"]', obj).attr('rel') == 'OR' ) {
+            if ( $('.facetview_or[href="' + escSelectorVal(rel) + '"]', obj).attr('rel') == 'OR' ) {
                 newobj += ' facetview_logic_or';
             }
             
@@ -793,10 +827,10 @@ search box - the end user will not know they are happening.
             }else {
                 var show_val = href;
             }
-            newobj += '" rel="' + rel + 
+            newobj += '" rel="' + escHtmlAttr(rel) +
                 '" alt="remove" title="remove"' +
-                ' href="' + href + '">' +
-                show_val + ' <i class="icon-white icon-remove" style="margin-top:1px;"></i></a>';
+                ' href="' + escHtmlAttr(href) + '">' +
+                escHtmlAttr(show_val) + ' <i class="icon-white icon-remove" style="margin-top:1px;"></i></a>';
 
             if ( $('#facetview_group_' + relclean, obj).length ) {
                 $('#facetview_group_' + relclean, obj).append(newobj);
@@ -937,8 +971,8 @@ search box - the end user will not know they are happening.
                                     val != 0 ? line += ', ' : false;
                                     if (thekey in options.filterchoice_result_fields) {
                                         line += '<a class="facetview_filterchoice' + '" rel="' +
-                                                options.filterchoice_result_fields[thekey] +
-                                                '" href="' + thevalue[val] + '">' + thevalue[val] + '</a>';
+                                                escHtmlAttr(options.filterchoice_result_fields[thekey]) +
+                                                '" href="' + escHtmlAttr(thevalue[val]) + '">' + escHtmlAttr(thevalue[val]) + '</a>';
                                         $('.facetview_filterchoice', obj).bind('click',clickfilterchoice);
                                     } else {
                                         line += thevalue[val];
@@ -947,9 +981,9 @@ search box - the end user will not know they are happening.
                             }
                         } else {
                             if (thekey in options.filterchoice_result_fields) {
-                                line += '<a class="facetview_filterchoice' + '" rel="' + 
-                                        options.filterchoice_result_fields[thekey] +
-                                        '" href="' + thevalue + '">' + thevalue + '</a>';
+                                line += '<a class="facetview_filterchoice' + '" rel="' +
+                                        escHtmlAttr(options.filterchoice_result_fields[thekey]) +
+                                        '" href="' + escHtmlAttr(thevalue) + '">' + escHtmlAttr(thevalue) + '</a>';
                                 $('.facetview_filterchoice', obj).bind('click',clickfilterchoice);
                             } else {
                                 line += thevalue;
@@ -1003,9 +1037,9 @@ search box - the end user will not know they are happening.
                     }else {
                       var show_val = item;
                     }
-                    var append = '<li value="' + records[item] + '" title="' + show_val +
+                    var append = '<li value="' + records[item] + '" title="' + escHtmlAttr(show_val) +
                         '" class="facetview_filtervalue" style="display:none;"><a class="facetview_filterchoice"' +
-                        ' rel="' + facet + '" href="' + item + '">' + show_val + '</a></li>';
+                        ' rel="' + escHtmlAttr(facet) + '" href="' + escHtmlAttr(item) + '">' + escHtmlAttr(show_val) + '</a></li>';
                     $('#wordcloud_' + facetclean, obj).append(append);
                   } 
                   var append = '</ul></td></tr>';
@@ -1021,7 +1055,7 @@ search box - the end user will not know they are happening.
                           var show_val = item;
                       }
                       var append = '<tr class="facetview_filtervalue" style="display:none;"><td><a class="facetview_filterchoice' +
-                          '" rel="' + facet + '" href="' + item + '">' + show_val +
+                          '" rel="' + escHtmlAttr(facet) + '" href="' + escHtmlAttr(item) + '">' + escHtmlAttr(show_val) +
                           ' (' + records[item] + ')</a></td></tr>';
                       $('#facetview_' + facetclean, obj).append(append);
                   }
@@ -1211,7 +1245,7 @@ search box - the end user will not know they are happening.
                         if ( !($(this).attr('rel') in seenor) ) {
                             seenor.push($(this).attr('rel'));
                             var bobj = {'bool':{'should':[]}};
-                            $('.facetview_filterselected[rel="' + $(this).attr('rel') + '"]').each(function() {
+                            $('.facetview_filterselected[rel="' + escSelectorVal($(this).attr('rel')) + '"]').each(function() {
                                 if ( $(this).hasClass('facetview_logic_or') ) {
                                     if ($.inArray($(this).attr('rel'), options.time_fields) != -1) {
                                         var ob = {'range':{}};
@@ -1358,8 +1392,60 @@ search box - the end user will not know they are happening.
                 delete qs.facets;
                 options.querystring = JSON.stringify(qs)
             }
-            options.sharesave_link ? $('.facetview_sharesaveurl', obj).val(window.location.protocol + '//' + window.location.host + window.location.pathname + '?base64=' + btoa(options.querystring)) : "";
+            // never let the share link block a search; the querystring can hold
+            // characters that base64 encoding chokes on
+            if ( options.sharesave_link ) {
+                try {
+                    $('.facetview_sharesaveurl', obj).val(window.location.protocol + '//' + window.location.host +
+                        window.location.pathname + '?base64=' + b64EncodeUnicode(options.querystring));
+                } catch (e) {
+                    $('.facetview_sharesaveurl', obj).val('');
+                }
+            }
             return qy;
+        };
+
+        // remove the stale-results warning
+        var clearsearcherror = function() {
+            $('.facetview_searcherror', obj).remove();
+        };
+
+        // warn that the results on the page no longer match the filters. The previous
+        // result set is deliberately left in place so it can still be read while the
+        // search is retried, but it is clearly labelled as stale
+        var showsearcherror = function(jqXHR, textStatus) {
+            clearsearcherror();
+            var status = jqXHR ? jqXHR.status : 0;
+            var body = null;
+            if ( jqXHR && jqXHR.responseText ) {
+                try { body = $.parseJSON(jqXHR.responseText); } catch (e) { body = null; }
+            }
+            var msg;
+            if ( status == 401 || status == 403 || ( body && body.authenticated === false ) ) {
+                msg = '<strong>Your session has expired.</strong> The results below are stale. ';
+                // only link somewhere the server told us about; guessing the login
+                // path breaks under the reverse-proxy prefixes these UIs run behind
+                if ( body && body.login_url ) {
+                    msg += '<a href="' + escHtmlAttr(body.login_url) + '">Log in again</a> to resume searching.';
+                } else {
+                    msg += 'Reload the page to log in again.';
+                }
+            } else if ( textStatus == 'timeout' ) {
+                msg = '<strong>The search timed out.</strong> The results below are stale &ndash; try narrowing the query.';
+            } else if ( textStatus == 'badpayload' ) {
+                msg = '<strong>The search returned an unexpected response.</strong> The results below are stale.';
+            } else {
+                msg = '<strong>The search failed' + ( status ? ' (HTTP ' + status + ')' : '' ) +
+                      '.</strong> The results below are stale.';
+                if ( body && body.message ) {
+                    msg += ' ' + escHtmlAttr(body.message);
+                }
+            }
+            var alertbox = '<div class="alert alert-error facetview_searcherror">' +
+                '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+                msg + '</div>';
+            var results = $('#facetview_results', obj);
+            results.length ? results.before(alertbox) : $('#facetview_rightcol', obj).append(alertbox);
         };
 
         // execute a search
@@ -1386,9 +1472,22 @@ search box - the end user will not know they are happening.
                 data: {source: qrystr},
                 // processData: false,
                 dataType: options.datatype,
+                cache: false,
+                timeout: 60000,
                 success: function(sdata) {
-                    ajax_request = null;
+                    // an error body or a truncated response must not be painted as
+                    // if it were a result set
+                    if ( !sdata || !sdata.hits ) {
+                        showsearcherror(null, 'badpayload');
+                        return;
+                    }
+                    clearsearcherror();
                     showresults(sdata);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                  // a search superseded by a newer one is not a failure
+                  if (textStatus == 'abort') return;
+                  showsearcherror(jqXHR, textStatus);
                 },
                 beforeSend: function(jqXHR, settings) {
                   // if a pre search callback is provided, run it
@@ -1398,6 +1497,8 @@ search box - the end user will not know they are happening.
                   return true;
                 },
                 complete: function(jqHXR, sts) {
+                  ajax_request = null;
+                  jQuery('.notify_loading').hide();
                   // if a post search callback is provided, run it
                   if (typeof options.post_search_callback == 'function') {
                       options.post_search_callback.call(this);

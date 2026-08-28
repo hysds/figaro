@@ -165,6 +165,9 @@
       $('.facet-view-simple').facetview({
         search_url: "{{ url_for('services/es.query', index='job_status') }}?",
         search_index: 'elasticsearch',
+        // json (not jsonp) so failed searches surface instead of silently leaving
+        // the previous result set on the page
+        datatype: 'json',
         post_search_callback: update_dashboard,
         facets: [
             {'field':'user_tags.untouched', 'display': 'user tags'},
